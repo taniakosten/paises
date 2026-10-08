@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101b36">
+  <title>Países · Panel de administración</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="Países, inicio">
+        <span class="brand-mark">P</span>
+        <span>atlas<span class="brand-dot">.</span></span>
+      </a>
+      <span class="local-badge"><span class="status-dot"></span> Panel local</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">GESTIÓN DE DATOS <span>·</span> MYSQL</p>
+          <h1>Directorio de <span>países</span></h1>
+          <p class="hero-copy">Consulta y administra los registros de tu base de datos desde un solo lugar.</p>
+        </div>
+        <div class="hero-icon" aria-hidden="true">◎</div>
+      </section>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="notices" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="notice notice-{{ category }}"><span class="notice-icon">{{ '✓' if category == 'success' else '!' }}</span>{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% if columns %}
+        <section class="create-card">
+          <div class="section-heading">
+            <div class="heading-icon">＋</div>
+            <div><h2>Agregar un país</h2><p>Completa los campos para crear un registro.</p></div>
+          </div>
+          <form action="{{ url_for('create_record') }}" method="post" class="create-form">
+            {% for column in columns %}
+              {% set name = column['Field'] %}
+              {% set is_auto = 'auto_increment' in (column['Extra'] or '')|lower %}
+              <label class="field {% if loop.first %}field-first{% endif %}">
+                <span>{{ name|replace('_', ' ')|title }}{% if column['Null'] != 'YES' and column['Default'] is none and not is_auto %}<b class="required-mark">*</b>{% endif %}</span>
+                <input type="text" name="{{ name }}" placeholder="{% if is_auto %}Automático{% else %}Escribe {{ name|replace('_', ' ')|lower }}{% endif %}" {% if is_auto %}disabled{% elif column['Null'] != 'YES' and column['Default'] is none %}required{% endif %}>
+              </label>
+            {% endfor %}
+            <button class="button button-primary create-button" type="submit"><span>＋</span> Agregar país</button>
+          </form>
+        </section>
+
+        <section class="directory-card">
+          <div class="directory-heading">
+            <div class="section-heading">
+              <div class="heading-icon heading-icon-blue">▤</div>
+              <div><h2>Países registrados</h2><p>Selecciona los campos para editar un registro.</p></div>
+            </div>
+            <span class="count-pill">{{ records|length }} registro{% if records|length != 1 %}s{% endif %}</span>
+          </div>
+          <div class="table-scroll">
+            <div class="form-bin" aria-hidden="true">
+              {% for record in records %}
+                {% set record_index = loop.index %}
+                <form id="update-{{ record_index }}" action="{{ url_for('change_record', action='update') }}" method="post">
+                  {% for key in primary_keys %}<input type="hidden" name="pk_{{ loop.index0 }}" value="{{ record[key] }}">{% endfor %}
+                </form>
+                <form id="delete-{{ record_index }}" action="{{ url_for('change_record', action='delete') }}" method="post">
+                  {% for key in primary_keys %}<input type="hidden" name="pk_{{ loop.index0 }}" value="{{ record[key] }}">{% endfor %}
+                </form>
+              {% endfor %}
+            </div>
+            <table>
+              <thead><tr>
+                {% for column in columns %}<th>{{ column['Field']|replace('_', ' ')|title }}</th>{% endfor %}
+                <th class="actions-heading">Acciones</th>
+              </tr></thead>
+              <tbody>
+                {% for record in records %}
+                  {% set record_index = loop.index %}
+                  <tr>
+                    {% for column in columns %}
+                      {% set name = column['Field'] %}
+                      {% if name in primary_keys %}
+                        <td><span class="id-value">{{ record[name] if record[name] is not none else '—' }}</span></td>
+                      {% else %}
+                        <td><input class="table-input" form="update-{{ record_index }}" type="text" name="{{ name }}" value="{{ record[name] if record[name] is not none else '' }}" aria-label="{{ name }} del registro"></td>
+                      {% endif %}
+                    {% endfor %}
+                    <td class="row-actions">
+                      <button class="button button-save" type="submit" form="update-{{ record_index }}">Guardar</button>
+                      <button class="button button-delete" type="submit" form="delete-{{ record_index }}" onclick="return confirm('¿Eliminar este país? Esta acción no se puede deshacer.');" aria-label="Eliminar registro">Eliminar</button>
+                    </td>
+                  </tr>
+                {% else %}
+                  <tr><td class="empty-state" colspan="{{ columns|length + 1 }}"><span class="empty-icon">◎</span><strong>Aún no hay países</strong><span>Agrega el primer registro usando el formulario de arriba.</span></td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <footer class="table-footer"><span><span class="status-dot"></span> Conectado a <strong>{{ config.get('DB_NAME', 'MySQL') }}</strong></span><span>La tabla se actualiza al guardar cambios</span></footer>
+        </section>
+      {% else %}
+        <section class="connection-card">
+          <div class="connection-icon">↗</div>
+          <div><h2>No se pudo cargar la tabla</h2><p>Comprueba la conexión de MySQL y la configuración de <strong>.env</strong>. La aplicación necesita acceso a la base de datos y una clave primaria en la tabla <strong>pais</strong>.</p></div>
+          <a class="button button-primary" href="{{ url_for('index') }}">Reintentar</a>
+        </section>
+      {% endif %}
+    </main>
+    <footer class="page-footer">ATLAS <span>·</span> ADMINISTRACIÓN LOCAL DE PAÍSES</footer>
+  </div>
+</body>
+</html>

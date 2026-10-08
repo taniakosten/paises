@@ -1,6 +1,6 @@
-# CRUD de países (Tkinter + MySQL/MariaDB)
+# CRUD de países (Python + MySQL/MariaDB)
 
-Aplicación de escritorio en Python para consultar, insertar, actualizar y eliminar registros de la tabla `pais` de la base `paises_tk`. La aplicación detecta las columnas y la clave primaria directamente desde MySQL/MariaDB al arrancar, así que no hay que codificar los campos manualmente.
+Aplicaciones de escritorio (Tkinter) y web (Flask) en Python para consultar, insertar, actualizar y eliminar registros de la tabla `pais` de MySQL/MariaDB. Ambas detectan las columnas y la clave primaria directamente desde la base de datos.
 
 ## Requisitos
 
@@ -15,7 +15,11 @@ Aplicación de escritorio en Python para consultar, insertar, actualizar y elimi
 2. Instala las dependencias: `pip install -r requirements.txt`.
 3. Copia `.env.example` a `.env` y ajusta `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` y `DB_PASSWORD`. La contraseña se mantiene en `.env`, que está excluido de Git.
 4. Comprueba que el usuario de MySQL tenga permisos `SELECT`, `INSERT`, `UPDATE` y `DELETE` sobre `paises_tk.pais`.
-5. Ejecuta `python main.py`.
+5. Ejecuta `python main.py` para abrir la aplicación de escritorio, o `python web.py` para la versión web.
+
+## Aplicación web
+
+Con el entorno virtual activo, inicia el servidor con `./.venv/bin/python web.py` y abre `http://127.0.0.1:5000` en el navegador. El servidor escucha solo en el equipo local; no está publicado en la red. La página permite agregar, editar y eliminar filas de `pais`. Cierra el servidor con `Ctrl+C` en la terminal.
 
 Ejemplo de tabla compatible:
 
